@@ -1,0 +1,34 @@
+options {
+  UNICODE_INPUT = true; 
+  STATIC = true;
+}
+
+PARSER_BEGIN(LughatDad)
+import java.util.HashMap;
+
+public class LughatDad {
+  static HashMap<String, Object> symbolTable = new HashMap<String, Object>();
+
+  public static void main(String[] args) throws ParseException {
+    System.out.println("مرحباً بك في مترجم لغة ضاد");
+    LughatDad parser = new LughatDad(System.in);
+    parser.program();
+  }
+}
+PARSER_END(LughatDad)
+
+SKIP : { " " | "\t" | "\n" | "\r" } 
+
+//  Part 1: Tokens (Lexer) 
+TOKEN : {
+  < MUTA_GHAYYER: "\u0645\u062a\u063a\u064a\u0631" > // متغير 
+}
+
+// Part 2: Grammar (Parser) 
+void program() : {} {
+  ( statement() )* <EOF>
+}
+
+void statement() : {} {
+  <MUTA_GHAYYER> { System.out.println("Detected variable declaration keyword."); }
+  // To be expanded 
