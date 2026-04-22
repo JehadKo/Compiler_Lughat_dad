@@ -31,5 +31,4 @@ void program() : {} {
 
 void statement() : {} {
   <MUTA_GHAYYER> { System.out.println("Detected variable declaration keyword."); }
-  // To be expanded 
- // comment
+ // comment2
