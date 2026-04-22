@@ -1,1 +1,45 @@
-/bin/
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+replay_pid*
+
+
+# JavaCC Generated Files (These should be built from the .jj file)
+# If your parser name is LughatDad, these are the typical outputs:
+LughatDad.java
+LughatDadTokenManager.java
+LughatDadConstants.java
+ParseException.java
+Token.java
+TokenMgrError.java
+SimpleCharStream.java
+
+# Eclipse Project Files
+.settings/
+.project
+.classpath
+bin/
+
+# OS generated files
+.DS_Store
+Thumbs.db
