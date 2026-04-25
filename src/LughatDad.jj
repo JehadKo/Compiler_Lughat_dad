@@ -20,10 +20,22 @@ PARSER_END(LughatDad)
 SKIP : { " " | "\t" | "\n" | "\r" } 
 
 //  Part 1: Tokens (Lexer) 
-TOKEN : {
-  < MUTA_GHAYYER: "\u0645\u062a\u063a\u064a\u0631" > // متغير 
+TOKEN : /* KEYWORDS */
+{
+ < MUTA_GHAYYER : "\u0645\u062a\u063a\u064a\u0631" >   // Variable متغير
+| < ETHA : "\u0625\u0630\u0627" > // IF إذا
+| < WA_ELLA : "\u0648\u0625\u0644\u0627" > // Else وإال
+| < BAYNAMA : "\u0628\u064a\u0646\u0645\u0627" > //  While بينما
 }
-
+TOKEN : /* IDENTIFIERS */
+{
+ // TODO: Define ARABIC_IDENTIFIER using UNICODE range \u0600-\u06FF
+}
+TOKEN : /* LITERALS */
+{
+ // TODO: Define NUMBER (integer and float)
+ // TODO: Define STRING
+}
 // Part 2: Grammar (Parser) 
 void program() : {} {
   ( statement() )* <EOF>
@@ -31,4 +43,4 @@ void program() : {} {
 
 void statement() : {} {
   <MUTA_GHAYYER> { System.out.println("Detected variable declaration keyword."); }
- // comment2
+ // comment2S
