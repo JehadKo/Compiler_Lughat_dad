@@ -1,0 +1,345 @@
+options {
+  STATIC = true;
+  UNICODE_INPUT = true; 
+}
+
+PARSER_BEGIN(LughatDad)
+package LughatDad;
+import java.util.*;
+
+
+interface Node {
+    void execute();
+}
+
+interface ExprNode {
+    double evaluate();
+}
+
+class NumberNode implements ExprNode {
+    double value;
+    NumberNode(double v) { this.value = v; }
+    public double evaluate() { return value; }
+}
+
+class VariableNode implements ExprNode {
+    String name;
+    VariableNode(String n) { this.name = n; }
+    public double evaluate() { return LughatDad.symbolTable.getOrDefault(name, 0.0); }
+}
+
+class MathNode implements ExprNode {
+    ExprNode left, right;
+    String op;
+    MathNode(ExprNode l, String op, ExprNode r) { this.left = l; this.op = op; this.right = r; }
+    public double evaluate() {
+        if (op.equals("+")) return left.evaluate() + right.evaluate();
+        if (op.equals("-")) return left.evaluate() - right.evaluate();
+        if (op.equals("*")) return left.evaluate() * right.evaluate();
+        if (op.equals("/")) return left.evaluate() / right.evaluate();
+        return 0.0;
+    }
+}
+class RepeatNode implements Node {
+    ExprNode countExpr;
+    List<Node> body;
+
+    RepeatNode(ExprNode countExpr, List<Node> body) {
+        this.countExpr = countExpr;
+        this.body = body;
+    }
+
+    public void execute() {
+        int limit = (int) countExpr.evaluate();
+        for (int i = 0; i < limit; i++) {
+            for (Node n : body) {
+                n.execute();
+            }
+        }
+    }
+}
+
+class PrintNode implements Node {
+    ExprNode exp = null;
+    String literal = null;
+    PrintNode(ExprNode e) { this.exp = e; }
+    PrintNode(String s) { this.literal = s; }
+    public void execute() {
+        if (literal != null) System.out.println(literal);
+        else System.out.println(exp.evaluate());
+        System.out.flush();
+    }
+}
+
+class AssignNode implements Node {
+    String varName;
+    ExprNode expression; 
+    AssignNode(String varName, ExprNode expr) { this.varName = varName; this.expression = expr; }
+    public void execute() {
+        LughatDad.symbolTable.put(varName, expression.evaluate());
+    }
+}
+
+class IfNode implements Node {
+    String varName, op;
+    ExprNode target; 
+    List<Node> trueBlock;
+    List<Node> elseBlock;
+   IfNode(String varName, String op, ExprNode target, List<Node> trueBlock, List<Node> elseBlock) {
+        this.varName = varName; 
+        this.op = op; 
+        this.target = target; 
+        this.trueBlock = trueBlock;
+        this.elseBlock = elseBlock;
+    }
+public void execute() {
+        double currentVal = LughatDad.symbolTable.getOrDefault(varName, 0.0);
+        if (LughatDad.compare(currentVal, op, target.evaluate())) {
+            for (Node n : trueBlock) n.execute();
+        } 
+        else if (elseBlock != null) {
+            for (Node n : elseBlock) n.execute();
+        }
+    }
+}
+class WhileNode implements Node {
+    String varName, op;
+    ExprNode target; 
+    List<Node> body;
+    WhileNode(String varName, String op, ExprNode target, List<Node> body) {
+        this.varName = varName; this.op = op; this.target = target; this.body = body;
+    }
+    public void execute() {
+        while (LughatDad.compare(LughatDad.symbolTable.getOrDefault(varName, 0.0), op, target.evaluate())) {
+            for (Node n : body) n.execute();
+        }
+    }
+
+    
+    }
+
+
+public class LughatDad {
+    public static HashMap<String, Double> symbolTable = new HashMap<String, Double>();
+
+    public static boolean compare(double left, String op, double right) {
+        if (op.equals(">")) return left > right;
+        if (op.equals("<")) return left < right;
+        if (op.equals("==")) return left == right;
+        if (op.equals("!=")) return left != right;
+        if (op.equals(">=")) return left >= right;
+        if (op.equals("<=")) return left <= right;
+        return false;
+    }
+
+public static void main(String[] args) {
+    try {
+        // --- 1. Force UTF-8 Encoding for the Output Streams ---
+        System.setOut(new java.io.PrintStream(System.out, true, "UTF-8"));
+        System.setErr(new java.io.PrintStream(System.err, true, "UTF-8"));
+
+        // Prints: "      مترجم لغة ضاد | LughatDad      "
+        System.out.println("      \u0645\u062a\u0631\u062c\u0645 \u0644\u063a\u0629 \u0636\u0627\u062f | LughatDad      ");
+        System.out.println("\n");
+
+        LughatDad parser = new LughatDad(System.in, "UTF-8");
+        
+        parser.program();
+
+    } catch (java.io.UnsupportedEncodingException e) {
+        // Fallback if UTF-8 fails
+        System.err.println("Encoding Error: UTF-8 not supported.");
+    } catch (ParseException e) {
+        // "خطأ إملائي: تأكد من الفواصل المنقوطة والأقواس."
+        System.err.println("\u062e\u0637\u0623 \u0625\u0645\u0644\u0627\u0626\u064a: \u062a\u0623\u0643\u062f \u0645\u0646 \u0627\u0644\u0641\u0648\u0627\u0635\u0644 \u0627\u0644\u0645\u0646\u0642\u0648\u0637\u0629 \u0648\u0627\u0644\u0623\u0642\u0648\u0627\u0633.");
+    } catch (TokenMgrError e) {
+        // "رمز غير معروف: أدخلت حرفا غير مدعوم."
+        System.err.println("\u0631\u0645\u0632 \u063a\u064a\u0631 \u0645\u0631\u0646\u0648\u0641: \u0623\u062f\u062e\u0644\u062a \u062d\u0631\u0641\u0627 \u063a\u064a\u0631 \u0645\u062f\u0639\u0648\u0645.");
+    } catch (Exception e) {
+        // "حدث خطأ: "
+        System.err.println("\u062d\u062f\u062b \u062e\u0637\u0623: " + e.getMessage());
+    }
+}
+}
+
+PARSER_END(LughatDad)
+
+SKIP : { " " | "\r" | "\t" | "\n" }
+
+
+ TOKEN : /* KEYWORDS */
+{
+  < MUTA_GHAYYER : "\u0645\u062a\u063a\u064a\u0631" > // متغير
+| < ITBA3 : "\u0627\u0637\u0628\u0639" >           // اطبع
+| < ETHA : "\u0625\u0630\u0627" >               // إذا
+| < WA_ELLA : "\u0648\u0625\u0644\u0627" >          // وإلا
+| < BAYNAMA : "\u0628\u064a\u0646\u0645\u0627" >      // بينما
+| < SAH: "\u0635\u062d" >                      // صح
+| < KHATA: "\u062e\u0637\u0623" >                // خطأ
+| < KARREER : "\u0643\u0631\u0631" >              // كرر
+}
+
+TOKEN : /* IDENTIFIERS & LITERALS */
+{
+  < IDENTIFIER : ["\u0621"-"\u064A"] (["\u0621"-"\u064A", "0"-"9", "_"])* >
+| < NUMBER : (["0"-"9", "\u0660"-"\u0669"])+ ("." (["0"-"9", "\u0660"-"\u0669"])+)? >
+| < STRING: "\"" (~["\""])* "\"" >
+}
+
+TOKEN : /* SYMBOLS & OPERATORS */
+{
+< SC : ";" | "\u061B" >
+| < LP : "(" >
+| < RP : ")" >
+| < LB : "{" >
+| < RB : "}" >
+| < PLUS : "+" >
+| < MINUS : "-" >
+| < MULTIPLY : "*" >
+| < DIVIDE : "/" >
+| < GT : ">" >
+| < LT : "<" >
+| < EQ : "==" >
+| < NEQ : "!=" >
+| < GE : ">=" >
+| < LE : "<=" >
+| < ASSIGN : "=" >
+}
+
+// grammer
+
+void program() : { 
+  Node n; 
+}
+{
+  ( 
+    n = statement() 
+    { 
+      if (n != null) n.execute(); 
+    } 
+  )* <EOF>
+}
+Node repeatStmt() : {
+  ExprNode count;
+  Node n;
+  List<Node> bodyList = new ArrayList<Node>();
+}
+{
+  <KARREER> <LP> count=expression() <RP>
+  <LB> ( n=statement() { bodyList.add(n); } )* <RB>
+  { return new RepeatNode(count, bodyList); }
+}
+Node statement() : { Node n; } 
+{
+  ( 
+    n = declaration() 
+  | n = assignment() 
+  | n = printStmt() 
+  | n = ifStmt() 
+  | n = whileStmt() 
+  | n = repeatStmt()  
+  )
+  { return n; }
+}
+
+
+ExprNode expression() : { ExprNode v, n; } {
+  v=term() 
+  ( <PLUS> n=term() { v = new MathNode(v, "+", n); } 
+  | <MINUS> n=term() { v = new MathNode(v, "-", n); } 
+  )* { return v; }
+}
+
+ExprNode term() : { ExprNode v, n; } {
+  v=unary() 
+  ( <MULTIPLY> n=unary() { v = new MathNode(v, "*", n); } 
+  | <DIVIDE> n=unary() { v = new MathNode(v, "/", n); } 
+  )* { return v; }
+}
+
+ExprNode unary() : { ExprNode v; } {
+  v=primary() { return v; }
+}
+
+ExprNode primary() : { Token t; ExprNode v; } {
+  t=<NUMBER> { 
+    String n = t.image.replace('١','1').replace('٢','2').replace('٣','3')
+                      .replace('٤','4').replace('٥','5').replace('٦','6')
+                      .replace('٧','7').replace('٨','8').replace('٩','9').replace('٠','0');
+    return new NumberNode(Double.parseDouble(n)); 
+  }
+| t=<IDENTIFIER> { return new VariableNode(t.image); }
+| <LP> v=expression() <RP> { return v; }
+}
+
+
+Node declaration() : { Token t; ExprNode node; } {
+  <MUTA_GHAYYER> t=<IDENTIFIER> <ASSIGN> node=expression() <SC>
+  { 
+    LughatDad.symbolTable.put(t.image, 0.0); 
+    return new AssignNode(t.image, node); 
+  }
+}
+
+Node assignment() : { Token t; ExprNode node; } 
+{
+  t=<IDENTIFIER> <ASSIGN> node=expression() <SC>
+  { 
+    return new AssignNode(t.image, node); 
+  }
+}
+
+Node printStmt() : { 
+  ExprNode exp; 
+  Token t; 
+  Node res = null; 
+} 
+{
+  <ITBA3> <LP> 
+  ( 
+    LOOKAHEAD(2) exp=expression() { res = new PrintNode(exp); }
+  | t=<STRING> { res = new PrintNode(t.image.substring(1, t.image.length()-1)); }
+  ) 
+  <RP> <SC>
+  { return res; }
+}
+
+Node ifStmt() : {
+  Token tVar, tOp;
+  ExprNode target;
+  Node n;
+  List<Node> trueBlock = new ArrayList<Node>();
+  List<Node> elseBlock = null; 
+}
+{
+  <ETHA> <LP> tVar=<IDENTIFIER> tOp=relOp() target=expression() <RP>
+  <LB> ( n=statement() { trueBlock.add(n); } )* <RB>
+  
+  ( 
+    <WA_ELLA> { elseBlock = new ArrayList<Node>(); }
+    <LB> ( n=statement() { elseBlock.add(n); } )* <RB> 
+  )? 
+
+  { 
+    return new IfNode(tVar.image, tOp.image, target, trueBlock, elseBlock); 
+  }
+}
+
+Node whileStmt() : {
+  Token tVar, tOp;
+  ExprNode target;
+  Node n;
+  List<Node> bodyList = new ArrayList<Node>();
+}
+{
+  <BAYNAMA> <LP> tVar=<IDENTIFIER> tOp=relOp() target=expression() <RP>
+  <LB> 
+    ( n=statement() { bodyList.add(n); } )* <RB>
+  { return new WhileNode(tVar.image, tOp.image, target, bodyList); }
+}
+
+Token relOp() : { Token t; }
+{
+  ( t=<GT> | t=<LT> | t=<EQ> | t=<NEQ> | t=<GE> | t=<LE> )
+  { return t; }
+}

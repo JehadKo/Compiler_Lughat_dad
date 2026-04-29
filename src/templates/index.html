@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LughatDad IDE</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500&family=Fira+Code&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      font-family: 'IBM Plex Sans Arabic', sans-serif;
+    }
+
+    textarea, #console {
+      direction: rtl;
+      unicode-bidi: plaintext;
+    }
+
+    /* Scroll sync fix */
+    textarea::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Line numbers custom styling for alignment */
+    /* Match exactly the padding-top from textarea (p-4 = 1rem = 16px) */
+    #lineNumbers {
+      padding-top: 1rem;
+    }
+
+    #lineNumbers div {
+      /* Force a specific line height to match the textarea exactly */
+      line-height: 1.5rem;
+      height: 1.5rem;
+    }
+
+    #editor {
+      /* Force exactly the same line-height */
+      line-height: 1.5rem;
+    }
+
+    /* Spinner animation */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-900 h-screen flex flex-col text-slate-200">
+
+  <!-- 🔝 Top Bar -->
+  <header class="flex items-center justify-between px-6 py-4 bg-slate-800 border-b border-slate-700 shadow-md">
+    
+    <!-- Title -->
+    <div class="flex items-center gap-3">
+        <h1 class="text-xl font-medium text-emerald-400">
+            مترجم لغة ضاد | LughatDad
+        </h1>
+    </div>
+
+    <!-- Run Button -->
+    <button id="runBtn"
+      class="flex items-center gap-2 px-6 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-75 disabled:cursor-not-allowed">
+      <span id="runIcon">▶</span>
+      <span id="runText">تشغيل</span>
+    </button>
+
+    <!-- Spacer -->
+    <div></div>
+  </header>
+
+  <!-- 🧱 Main Layout -->
+  <main class="flex flex-1 flex-col md:flex-row overflow-hidden">
+
+    <!-- 🧾 Editor Panel -->
+    <section class="flex-1 bg-slate-950 relative flex border-l border-slate-800 md:border-b-0 border-b">
+
+      <!-- Editor Container -->
+      <div class="flex w-full relative">
+
+        <!-- Code Area -->
+        <!-- p-4 = 1rem padding all around. text-sm = 14px usually, leading-6 = 1.5rem line height -->
+        <textarea id="editor"
+          class="w-full h-full bg-transparent resize-none outline-none p-4 pr-12 font-mono text-sm text-slate-300 z-20 relative"
+          spellcheck="false"
+          placeholder="اكتب الكود هنا...&#10;متغير س = 5&#10;اطبع(س)"></textarea>
+
+        <!-- Line Numbers (RIGHT SIDE) -->
+        <div id="lineNumbers"
+          class="absolute right-0 top-0 h-full w-10 text-xs text-slate-500 bg-slate-900 border-l border-slate-800 text-center font-mono select-none overflow-hidden z-10 flex flex-col">
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- 🖥 Console Panel -->
+    <section class="flex-1 bg-slate-900 flex flex-col">
+
+      <!-- Console Header -->
+      <div class="flex justify-between items-center px-4 py-2 border-b border-slate-800 bg-slate-800/50">
+        <span class="text-sm text-slate-400 font-mono">Terminal</span>
+
+        <button id="clearBtn"
+          class="text-xs px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors focus:outline-none">
+          مسح
+        </button>
+      </div>
+
+      <!-- Output -->
+      <div id="console"
+        class="flex-1 p-4 overflow-auto text-sm font-mono text-slate-300 whitespace-pre-wrap">
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ⚙️ JavaScript -->
+  <script>
+    const editor = document.getElementById("editor");
+    const lineNumbers = document.getElementById("lineNumbers");
+    const runBtn = document.getElementById("runBtn");
+    const runIcon = document.getElementById("runIcon");
+    const runText = document.getElementById("runText");
+    const consoleOutput = document.getElementById("console");
+    const clearBtn = document.getElementById("clearBtn");
+
+    // 📏 Update line numbers
+    function updateLineNumbers() {
+      // Calculate based on newlines, handling empty lines too
+      const lines = editor.value.split("\n").length;
+      let numbers = "";
+
+      for (let i = 1; i <= lines; i++) {
+        numbers += `<div>${i}</div>`;
+      }
+
+      lineNumbers.innerHTML = numbers;
+    }
+
+    // Sync scroll
+    editor.addEventListener("scroll", () => {
+      lineNumbers.scrollTop = editor.scrollTop;
+    });
+
+    editor.addEventListener("input", updateLineNumbers);
+
+    // Run code
+    runBtn.addEventListener("click", async () => {
+      const code = editor.value;
+      if (!code.trim()) return;
+
+      // Set loading state
+      runBtn.disabled = true;
+      runIcon.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+      runText.textContent = "جاري التنفيذ...";
+
+      consoleOutput.className = "flex-1 p-4 overflow-auto text-sm font-mono whitespace-pre-wrap text-slate-400";
+      consoleOutput.textContent = "⏳ جاري التنفيذ...\n";
+
+      try {
+          const response = await fetch('/run', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: code })
+          });
+
+          const data = await response.json();
+
+          if (data.isError) {
+              consoleOutput.className = "flex-1 p-4 overflow-auto text-sm font-mono whitespace-pre-wrap text-red-400";
+          } else {
+              consoleOutput.className = "flex-1 p-4 overflow-auto text-sm font-mono whitespace-pre-wrap text-emerald-400";
+          }
+          consoleOutput.textContent = data.output;
+      } catch (error) {
+          consoleOutput.className = "flex-1 p-4 overflow-auto text-sm font-mono whitespace-pre-wrap text-red-400";
+          consoleOutput.textContent = "❌ فشل الاتصال بالخادم.";
+      } finally {
+          // Reset loading state
+          runBtn.disabled = false;
+          runIcon.textContent = "▶";
+          runText.textContent = "تشغيل";
+      }
+    });
+
+    // 🧹 Clear console
+    clearBtn.addEventListener("click", () => {
+      consoleOutput.textContent = "";
+      consoleOutput.className = "flex-1 p-4 overflow-auto text-sm font-mono text-slate-300 whitespace-pre-wrap";
+    });
+
+    // Init
+    updateLineNumbers();
+  </script>
+
+</body>
+</html>
